@@ -1,0 +1,49 @@
+/* styles/globals.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --header-height: 64px;
+  --bg-gradient-light: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 25%, #e2e8f0 75%, #cbd5e1 100%);
+  --bg-gradient-dark: linear-gradient(135deg, #000000 0%, #010616 25%, #1e1b4b 75%, #312e81 100%);
+  --bg-solid-light: #ffffff;
+  --bg-solid-dark: #111827;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  min-height: 100vh;
+  transition: background 0.5s ease, color 0.2s ease;
+}
+
+[data-theme="light"] {
+  --bg-color: var(--bg-solid-light);
+  --bg-gradient: var(--bg-gradient-light);
+  --text-color: #111827;
+  --border-color: #e5e7eb;
+  background: var(--bg-gradient);
+  background-color: var(--bg-color);
+  color: var(--text-color);
+}
+
+[data-theme="dark"] {
+  --bg-color: var(--bg-solid-dark);
+  --bg-gradient: var(--bg-gradient-dark);
+  --text-color: #f3f4f6;
+  --border-color: #374151;
+  background: var(--bg-gradient);
+  background-color: var(--bg-color);
+  color: var(--text-color);
+}
+
+/* Ensure Tailwind dark mode works with data-theme */
+@layer base {
+  [data-theme="dark"] .dark\:bg-gray-700 {
+    background-color: #374151;
+  }
+  [data-theme="dark"] .dark\:text-white {
+    color: #ffffff;
+  }
+  /* Add other dark mode overrides as needed */
+}
