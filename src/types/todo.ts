@@ -9,13 +9,6 @@ export interface Subtask {
   createdAt: Date;
 }
 
-// export interface TimeEntry {
-//   id: string;
-//   start: Date;
-//   end?: Date;
-//   duration?: number; // in minutes
-// }
-
 export interface SharedWith {
   userId: string;
   email: string;
@@ -25,10 +18,26 @@ export interface SharedWith {
 export interface TimeEntry {
   id: string;
   start: Date;
-  end?: Date;
-  duration?: number;
-  countdownDuration?: number; // Optional for countdown mode
+  end: Date;
+  duration: number;
 }
+
+interface TimeTracking {
+  id: string;
+  start: string;
+  countdownDuration?: number;
+}
+
+interface TimeTrackerProps {
+  timeEntries: TimeEntry[];
+  onStartTracking: (countdownDuration?: number) => void;
+  onStopTracking: (duration: number) => void;
+  currentTracking?: TimeTracking; // ← Change this
+  mode?: 'elapsed' | 'countdown';
+  onModeChange?: (mode: 'elapsed' | 'countdown') => void;
+  setCountdownDuration?: (duration: number) => void;
+}
+
 
 export interface Task {
   id: string;
@@ -41,19 +50,14 @@ export interface Task {
   category: string;
   priority: 'high' | 'medium' | 'low';
   notes?: string;
-  recurrence?: string;
+  recurrence?: Recurrence; // Changed from string to Recurrence
   recurrenceEndDate?: Date;
-  subtasks?: Array<{
-    id: string;
-    title: string;
-    completed: boolean;
-  }>;
+  subtasks?: Subtask[];
   timeEntries?: TimeEntry[];
-  sharedWith?: string[];
-  status: 'pending' | 'completed';
-  activeTracking?: TimeEntry | null; // New field for active tracking
+  sharedWith?: SharedWith[];
+  status: TaskStatus;
+  activeTracking: TimeTracking | null | undefined; // Fixed typo from Undefined to null
 }
-
 
 export interface Category {
   id: string;

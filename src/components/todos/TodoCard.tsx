@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Task } from '@/types/todo';
+import { Task, TimeEntry } from '@/types/todo';
 import Checkbox from '../ui/Checkbox';
 import Button from '../ui/Button';
 import {
@@ -24,28 +24,23 @@ interface TodoCardProps {
   onDrop: (e: React.DragEvent) => void;
 }
 
-const TodoCard: React.FC<TodoCardProps> = ({
-  task,
-  onDragStart,
-  onDragOver,
-  onDrop,
-}) => {
-  const { dispatch } = useTodoContext();
+const useTaskTracking = (task: Task, dispatch: React.Dispatch<any>) => {
   const [currentDuration, setCurrentDuration] = useState(0);
 
   useEffect(() => {
     let interval: NodeJS.Timeout | undefined;
 
-    // Only set up the interval if activeTracking is defined
     if (task.activeTracking) {
+      const activeTracking = task.activeTracking;
       interval = setInterval(() => {
-        const activeTracking = task.activeTracking; // Type assertion not needed with prior check
+        const startDate = new Date(activeTracking.start);
+        const elapsed = calculateDuration(startDate);
+
         if (activeTracking.countdownDuration) {
-          const elapsed = calculateDuration(new Date(activeTracking.start));
           const remaining = activeTracking.countdownDuration - elapsed;
           setCurrentDuration(remaining > 0 ? remaining : 0);
+
           if (remaining <= 0) {
-            // Auto-stop countdown
             dispatch({
               type: 'UPDATE_TASK',
               payload: {
@@ -55,25 +50,36 @@ const TodoCard: React.FC<TodoCardProps> = ({
                   ...(task.timeEntries || []),
                   {
                     id: Date.now().toString(),
-                    start: activeTracking.start,
+                    start: new Date(activeTracking.start),
                     end: new Date(),
                     duration: activeTracking.countdownDuration,
-                  },
+                  } as TimeEntry,
                 ],
               },
             });
           }
         } else {
-          setCurrentDuration(calculateDuration(new Date(activeTracking.start)));
+          setCurrentDuration(elapsed);
         }
       }, 1000);
     }
 
-    // Cleanup interval on unmount or when activeTracking changes
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [task.activeTracking, dispatch, task]); // Include task in dependencies to ensure updates
+  }, [task.activeTracking, dispatch]);
+
+  return currentDuration;
+};
+
+const TodoCard: React.FC<TodoCardProps> = ({
+  task,
+  onDragStart,
+  onDragOver,
+  onDrop,
+}) => {
+  const { dispatch } = useTodoContext();
+  const currentDuration = useTaskTracking(task, dispatch);
 
   const handleToggle = () => {
     dispatch({ type: 'TOGGLE_TASK', payload: task.id });
@@ -187,4 +193,4 @@ const TodoCard: React.FC<TodoCardProps> = ({
   );
 };
 
-export default TodoCard;
+export default React.memo(TodoCard);

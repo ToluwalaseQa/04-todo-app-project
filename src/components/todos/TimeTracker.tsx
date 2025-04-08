@@ -7,15 +7,22 @@ import { formatDuration, calculateDuration } from '@/lib/utils';
 import { TimeEntry } from '@/types/todo';
 import Input from '../ui/Input';
 
+interface TimeTracking {
+  id: string;
+  start: string;
+  countdownDuration?: number;
+}
+
 interface TimeTrackerProps {
   timeEntries: TimeEntry[];
   onStartTracking: (countdownDuration?: number) => void;
   onStopTracking: (duration: number) => void;
-  currentTracking?: TimeEntry & { countdownDuration?: number };
-  mode?: 'elapsed' | 'countdown'; // New prop for mode
-  onModeChange?: (mode: 'elapsed' | 'countdown') => void; // Callback for mode change
-  setCountdownDuration?: (duration: number) => void; // Callback to set countdown duration
+  currentTracking?: TimeTracking; // ← Change this
+  mode?: 'elapsed' | 'countdown';
+  onModeChange?: (mode: 'elapsed' | 'countdown') => void;
+  setCountdownDuration?: (duration: number) => void;
 }
+
 
 export const TimeTracker: React.FC<TimeTrackerProps> = ({
   timeEntries,
