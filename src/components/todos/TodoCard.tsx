@@ -19,9 +19,12 @@ import { formatDuration, calculateDuration } from '@/lib/utils';
 
 interface TodoCardProps {
   task: Task;
+  index: number;
+  isDragged?: boolean;
+  isHovered?: boolean;
   onDragStart: (task: Task) => void;
-  onDragOver: (e: React.DragEvent) => void;
-  onDrop: (e: React.DragEvent) => void;
+  onDragOver: (e: React.DragEvent<HTMLDivElement>) => void;
+  onDrop: (e: React.DragEvent<HTMLDivElement>) => void;
 }
 
 const useTaskTracking = (task: Task, dispatch: React.Dispatch<any>) => {
@@ -67,13 +70,15 @@ const useTaskTracking = (task: Task, dispatch: React.Dispatch<any>) => {
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [task.activeTracking, dispatch]);
+  }, [task, dispatch]);
 
   return currentDuration;
 };
 
 const TodoCard: React.FC<TodoCardProps> = ({
   task,
+  isDragged,
+  isHovered,
   onDragStart,
   onDragOver,
   onDrop,
@@ -96,10 +101,15 @@ const TodoCard: React.FC<TodoCardProps> = ({
   return (
     <div
       draggable
-      onDragStart={() => onDragStart(task)}
+      onDragStart={(e) => {
+        e.dataTransfer.setData('text/plain', task.id);
+        onDragStart(task);
+      }}
       onDragOver={onDragOver}
       onDrop={onDrop}
-      className='border rounded-lg p-4 mb-3 shadow-sm hover:shadow-md transition-shadow dark:border-gray-700 dark:bg-gray-800 cursor-move'
+      className={`border rounded-lg p-4 mb-3 shadow-sm hover:shadow-md transition-shadow dark:border-gray-700 dark:bg-gray-800 cursor-move
+        ${isDragged ? 'opacity-50 border-dashed border-2 border-gray-400' : ''}
+        ${isHovered ? 'bg-gray-100 dark:bg-gray-700' : ''}`}
     >
       <div className='flex items-start justify-between'>
         <div className='flex items-start space-x-3 flex-1'>

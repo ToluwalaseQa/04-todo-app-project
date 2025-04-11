@@ -55,7 +55,7 @@ const initialState: TodoState = {
     dueDate: 'all',
     search: '',
   },
-  sortOption: 'newest',
+  sortOption: 'none',
   editingTask: null,
 };
 
@@ -76,19 +76,19 @@ const todoReducer = (state: TodoState, action: TodoAction): TodoState => {
         tasks: state.tasks.filter((task) => task.id !== action.payload),
       };
     // TodoContext.tsx
-case 'TOGGLE_TASK':
-  return {
-    ...state,
-    tasks: state.tasks.map((task) =>
-      task.id === action.payload
-        ? {
-            ...task,
-            completed: !task.completed,
-            status: !task.completed ? 'completed' : 'pending', 
-          }
-        : task
-    ),
-  };
+    case 'TOGGLE_TASK':
+      return {
+        ...state,
+        tasks: state.tasks.map((task) =>
+          task.id === action.payload
+            ? {
+                ...task,
+                completed: !task.completed,
+                status: !task.completed ? 'completed' : 'pending',
+              }
+            : task
+        ),
+      };
     case 'SET_EDITING_TASK':
       return { ...state, editingTask: action.payload };
     case 'ADD_CATEGORY':
@@ -119,7 +119,14 @@ case 'TOGGLE_TASK':
     case 'LOAD_CATEGORIES':
       return { ...state, categories: action.payload };
     case 'REORDER_TASKS':
-      return { ...state, tasks: action.payload };
+      console.log(
+        'Context Reordered:',
+        action.payload.map((t) => t.id)
+      );
+      return {
+        ...state,
+        tasks: [...action.payload],
+      };
     case 'SET_STATE':
       return action.payload;
     default:
@@ -213,4 +220,8 @@ export const TodoProvider = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
-export const useTodoContext = () => useContext(TodoContext);
+export const useTodoContext = () => {
+  const context = useContext(TodoContext);
+  if (!context) throw new Error('useTodoContext must be used within a TodoProvider');
+  return context;
+};

@@ -2,6 +2,7 @@ export type Priority = 'high' | 'medium' | 'low';
 export type Recurrence = 'none' | 'daily' | 'weekly' | 'monthly';
 export type TaskStatus = 'pending' | 'in-progress' | 'completed';
 
+
 export interface Subtask {
   id: string;
   title: string;
@@ -79,4 +80,4 @@ export type FilterOptions = {
   search: string;
 };
 
-export type SortOptions = 'newest' | 'oldest' | 'dueDate' | 'priority';
+export type SortOptions = 'newest' | 'oldest' | 'dueDate' | 'priority' | 'none';

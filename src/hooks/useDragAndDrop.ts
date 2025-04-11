@@ -1,34 +1,71 @@
-import { useState } from 'react';
+import { Task } from '@/types/todo';
+
+interface DragAndDropOptions {
+  setDraggedId?: (id: string | null) => void;
+  setHoveredId?: (id: string | null) => void;
+}
 
 export const useDragAndDrop = (
-  initialItems: any[],
-  onReorder: (items: any[]) => void
+  tasks: Task[],
+  onReorder: (newTasks: Task[]) => void,
+  options: DragAndDropOptions = {}
 ) => {
-  const [draggedItem, setDraggedItem] = useState<any>(null);
-
-  const handleDragStart = (item: any) => {
-    setDraggedItem(item);
+  const handleDragStart = (task: Task) => {
+    console.log('Drag Start - Task ID:', task.id);
+    options.setDraggedId?.(task.id);
   };
 
-  const handleDragOver = (e: React.DragEvent, index: number) => {
+  const handleDragOver = (
+    e: React.DragEvent<HTMLDivElement>,
+    targetId: string
+  ) => {
     e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    console.log('Drag Over - Target ID:', targetId);
+    options.setHoveredId?.(targetId);
   };
 
-  const handleDrop = (e: React.DragEvent, targetIndex: number) => {
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>, targetId: string) => {
     e.preventDefault();
-    if (!draggedItem) return;
+    console.log('Drop - Target ID:', targetId);
+    const draggedId = e.dataTransfer.getData('text/plain');
+    console.log('Drop - Dragged ID from dataTransfer:', draggedId);
+    console.log(
+      'Input Tasks:',
+      tasks.map((t) => t.id)
+    ); // Add this line
 
-    const currentIndex = initialItems.findIndex(
-      (item) => item.id === draggedItem.id
+    if (!draggedId || draggedId === targetId) {
+      console.log('Drop aborted: No dragged ID or same as target');
+      options.setDraggedId?.(null);
+      options.setHoveredId?.(null);
+      return;
+    }
+
+    const draggedIndex = tasks.findIndex((task) => task.id === draggedId);
+    const targetIndex = tasks.findIndex((task) => task.id === targetId);
+
+    console.log('Dragged Index:', draggedIndex, 'Target Index:', targetIndex);
+
+    if (draggedIndex === -1 || targetIndex === -1) {
+      console.log('Drop aborted: Invalid indices');
+      options.setDraggedId?.(null);
+      options.setHoveredId?.(null);
+      return;
+    }
+
+    const reordered = [...tasks];
+    const [movedTask] = reordered.splice(draggedIndex, 1);
+    reordered.splice(targetIndex, 0, movedTask);
+
+    console.log(
+      'New Order:',
+      reordered.map((t) => t.id)
     );
-    if (currentIndex === -1 || currentIndex === targetIndex) return;
+    onReorder(reordered);
 
-    const newItems = [...initialItems];
-    newItems.splice(currentIndex, 1);
-    newItems.splice(targetIndex, 0, draggedItem);
-
-    onReorder(newItems);
-    setDraggedItem(null);
+    options.setDraggedId?.(null);
+    options.setHoveredId?.(null);
   };
 
   return { handleDragStart, handleDragOver, handleDrop };

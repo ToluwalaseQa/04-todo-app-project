@@ -43,7 +43,6 @@ export const useTodos = () => {
     } else if (state.filterOptions.dueDate === 'week') {
       const nextWeek = new Date(today);
       nextWeek.setDate(today.getDate() + 7);
-
       tasks = tasks.filter((task) => {
         if (!task.dueDate) return false;
         const dueDate = new Date(task.dueDate);
@@ -52,7 +51,6 @@ export const useTodos = () => {
     } else if (state.filterOptions.dueDate === 'month') {
       const nextMonth = new Date(today);
       nextMonth.setMonth(today.getMonth() + 1);
-
       tasks = tasks.filter((task) => {
         if (!task.dueDate) return false;
         const dueDate = new Date(task.dueDate);
@@ -74,41 +72,23 @@ export const useTodos = () => {
     // Sort tasks
     switch (state.sortOption) {
       case 'newest':
-        tasks.sort((a, b) => {
-          const dateA =
-            a.createdAt instanceof Date
-              ? a.createdAt
-              : new Date(a.createdAt || 0);
-          const dateB =
-            b.createdAt instanceof Date
-              ? b.createdAt
-              : new Date(b.createdAt || 0);
-          return dateB.getTime() - dateA.getTime();
-        });
+        tasks.sort(
+          (a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
         break;
       case 'oldest':
-        tasks.sort((a, b) => {
-          const dateA =
-            a.createdAt instanceof Date
-              ? a.createdAt
-              : new Date(a.createdAt || 0);
-          const dateB =
-            b.createdAt instanceof Date
-              ? b.createdAt
-              : new Date(b.createdAt || 0);
-          return dateA.getTime() - dateB.getTime();
-        });
+        tasks.sort(
+          (a, b) =>
+            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+        );
         break;
       case 'dueDate':
         tasks.sort((a, b) => {
           if (!a.dueDate && !b.dueDate) return 0;
           if (!a.dueDate) return 1;
           if (!b.dueDate) return -1;
-          const dateA =
-            a.dueDate instanceof Date ? a.dueDate : new Date(a.dueDate);
-          const dateB =
-            b.dueDate instanceof Date ? b.dueDate : new Date(b.dueDate);
-          return dateA.getTime() - dateB.getTime();
+          return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
         });
         break;
       case 'priority':
@@ -123,7 +103,8 @@ export const useTodos = () => {
   }, [state.tasks, state.filterOptions, state.sortOption]);
 
   return {
-    tasks: filteredTasks,
+    tasks: state.tasks, // Raw tasks for reordering
+    filteredTasks, // Filtered and sorted tasks
     categories: state.categories,
     filterOptions: state.filterOptions,
     sortOption: state.sortOption,
