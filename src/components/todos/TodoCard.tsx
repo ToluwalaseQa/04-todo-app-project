@@ -87,7 +87,14 @@ const TodoCard: React.FC<TodoCardProps> = ({
   const currentDuration = useTaskTracking(task, dispatch);
 
   const handleToggle = () => {
-    dispatch({ type: 'TOGGLE_TASK', payload: task.id });
+    dispatch({
+      type: 'UPDATE_TASK',
+      payload: {
+        ...task,
+        completed: !task.completed,
+        status: !task.completed ? 'completed' : 'in-progress', // Sync status with completion
+      },
+    });
   };
 
   const handleEdit = () => {
@@ -142,6 +149,17 @@ const TodoCard: React.FC<TodoCardProps> = ({
             <div className='flex flex-wrap gap-2 mt-2'>
               <PriorityBadge priority={task.priority} />
               <CategoryBadge category={task.category} />
+              <span
+                className={`text-sm ${
+                  task.status === 'in-progress'
+                    ? 'text-yellow-600'
+                    : task.status === 'completed'
+                    ? 'text-green-600'
+                    : 'text-gray-600'
+                }`}
+              >
+                {task.status}
+              </span>
               {task.dueDate && (
                 <div className='flex items-center text-sm text-gray-500 dark:text-gray-400'>
                   <CalendarIcon className='h-4 w-4 mr-1' />

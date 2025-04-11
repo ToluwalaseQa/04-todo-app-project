@@ -13,6 +13,7 @@ import { RecurrencePicker } from './RecurrencePicker';
 import { SubtaskList } from './SubtaskList';
 import { TimeTracker } from './TimeTracker';
 import { ShareModal } from './ShareModal';
+import { formatDuration, calculateDuration } from '@/lib/utils';
 
 interface TodoFormProps {
   isOpen: boolean;
@@ -41,6 +42,40 @@ const TodoForm: React.FC<TodoFormProps> = ({ isOpen, onClose }) => {
   const [countdownDuration, setCountdownDuration] = useState<number | null>(
     null
   );
+  const [elapsedTime, setElapsedTime] = useState(0);
+
+  // Real-time elapsed time effect with type guards
+  useEffect(() => {
+    let interval: NodeJS.Timeout | undefined;
+
+    if (task.activeTracking) {
+      const startDate = new Date(task.activeTracking.start);
+
+      if (trackingMode === 'elapsed') {
+        interval = setInterval(() => {
+          const elapsed = calculateDuration(startDate);
+          setElapsedTime(elapsed);
+        }, 1000);
+      } else if (
+        trackingMode === 'countdown' &&
+        task.activeTracking.countdownDuration !== undefined
+      ) {
+        const countdownDuration = task.activeTracking.countdownDuration; // Store locally as number
+        interval = setInterval(() => {
+          const elapsed = calculateDuration(startDate);
+          const remaining = countdownDuration - elapsed;
+          setElapsedTime(remaining > 0 ? remaining : 0);
+          if (remaining <= 0) {
+            handleStopTracking(countdownDuration); // Use the stored number
+          }
+        }, 1000);
+      }
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [task.activeTracking, trackingMode]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -52,16 +87,17 @@ const TodoForm: React.FC<TodoFormProps> = ({ isOpen, onClose }) => {
       setTask({
         ...state.editingTask,
         activeTracking: state.editingTask.activeTracking || null,
-        recurrence: state.editingTask.recurrence || 'none', // Ensure Recurrence type
+        recurrence: state.editingTask.recurrence || 'none',
       });
       setTrackingMode(
-        state.editingTask.activeTracking?.countdownDuration
+        state.editingTask.activeTracking?.countdownDuration !== undefined
           ? 'countdown'
           : 'elapsed'
       );
       setCountdownDuration(
         state.editingTask.activeTracking?.countdownDuration || null
       );
+      setElapsedTime(0);
     } else {
       resetForm();
     }
@@ -82,6 +118,7 @@ const TodoForm: React.FC<TodoFormProps> = ({ isOpen, onClose }) => {
     });
     setTrackingMode('elapsed');
     setCountdownDuration(null);
+    setElapsedTime(0);
     setErrors({});
   };
 
@@ -134,23 +171,28 @@ const TodoForm: React.FC<TodoFormProps> = ({ isOpen, onClose }) => {
   const handleStartTracking = (countdownDuration?: number) => {
     setTask((prevTask) => ({
       ...prevTask,
+      status: 'in-progress',
       activeTracking: {
         id: 'current',
         start: new Date().toISOString(),
         countdownDuration,
       },
     }));
-    if (countdownDuration) setCountdownDuration(countdownDuration);
+    if (countdownDuration !== undefined)
+      setCountdownDuration(countdownDuration);
+    setElapsedTime(0);
   };
 
-  const handleStopTracking = (duration: number) => {
+  const handleStopTracking = (duration?: number) => {
     if (task.activeTracking) {
       const endTime = new Date();
+      const calculatedDuration =
+        duration ?? calculateDuration(new Date(task.activeTracking.start));
       const newEntry: TimeEntry = {
         id: Date.now().toString(),
         start: new Date(task.activeTracking.start),
         end: endTime,
-        duration,
+        duration: calculatedDuration,
       };
       setTask((prevTask) => ({
         ...prevTask,
@@ -158,6 +200,7 @@ const TodoForm: React.FC<TodoFormProps> = ({ isOpen, onClose }) => {
         activeTracking: null,
       }));
       setCountdownDuration(null);
+      setElapsedTime(0);
     }
   };
 
@@ -208,7 +251,7 @@ const TodoForm: React.FC<TodoFormProps> = ({ isOpen, onClose }) => {
           <h3 className='text-lg font-semibold text-gray-900 dark:text-gray-100'>
             Categorization
           </h3>
-          <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
+          <div className='grid grid-cols-1 sm:grid-cols-3 gap-4'>
             <div>
               <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1'>
                 Priority
@@ -239,6 +282,29 @@ const TodoForm: React.FC<TodoFormProps> = ({ isOpen, onClose }) => {
                   value: c.name,
                   label: c.name,
                 }))}
+                className='w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-indigo-500 transition-all'
+              />
+            </div>
+            <div>
+              <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1'>
+                Status
+              </label>
+              <Select
+                value={task.status}
+                onChange={(e) =>
+                  setTask({
+                    ...task,
+                    status: e.target.value as
+                      | 'pending'
+                      | 'in-progress'
+                      | 'completed',
+                  })
+                }
+                options={[
+                  { value: 'pending', label: 'Pending' },
+                  { value: 'in-progress', label: 'In Progress' },
+                  { value: 'completed', label: 'Completed' },
+                ]}
                 className='w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-indigo-500 transition-all'
               />
             </div>
@@ -307,12 +373,17 @@ const TodoForm: React.FC<TodoFormProps> = ({ isOpen, onClose }) => {
               </label>
               <TimeTracker
                 timeEntries={task.timeEntries || []}
-                currentTracking={task.activeTracking ?? undefined} // Convert null to undefined
+                currentTracking={task.activeTracking ?? undefined}
                 onStartTracking={handleStartTracking}
                 onStopTracking={handleStopTracking}
                 mode={trackingMode}
                 onModeChange={setTrackingMode}
               />
+              {task.activeTracking && (
+                <div className='mt-2 text-sm text-blue-500 dark:text-blue-400'>
+                  Current Tracking: {formatDuration(elapsedTime)}
+                </div>
+              )}
             </div>
           </div>
         </div>
